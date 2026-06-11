@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Megastadt Lagos - Interaktives Quiz</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            --glass-bg: rgba(255, 255, 255, 0.07);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-highlight: rgba(255, 255, 255, 0.25);
+            --text-main: #f0f4f8;
+            --accent-neon: #00f2fe;
+            --accent-glow: rgba(0, 242, 254, 0.4);
+            --correct: #2ecc71;
+            --wrong: #e74c3c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-main);
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Glossy Card Container */
+        .quiz-container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 var(--glass-highlight);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* Glossy Schein-Effekt im Hintergrund */
+        .quiz-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            background: linear-gradient(to right, #fff, var(--accent-neon));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.1);
+            height: 6px;
+            border-radius: 3px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #4facfe 0%, var(--accent-neon) 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .question-box {
+            margin-bottom: 25px;
+        }
+
+        .question-number {
+            font-size: 0.9rem;
+            color: var(--accent-neon);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .question-text {
+            font-size: 1.3rem;
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .options-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            padding: 16px 20px;
+            border-radius: 14px;
+            cursor: pointer;
+            color: var(--text-main);
+            font-size: 1rem;
+            text-align: left;
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+        }
+
+        /* Hover-Effekt (Gloss-Glow) */
+        .option-btn:hover:not([disabled]) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-neon);
+            box-shadow: 0 0 15px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+
+        .option-btn:active:not([disabled]) {
+            transform: translateY(0);
+        }
+
+        /* Richtig/Falsch Styles */
+        .option-btn.correct {
+            background: rgba(46, 204, 113, 0.2) !important;
+            border-color: var(--correct) !important;
+            box-shadow: 0 0 15px rgba(46, 204, 113, 0.4) !important;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .option-btn.wrong {
+            background: rgba(231, 76, 60, 0.2) !important;
+            border-color: var(--wrong) !important;
+            box-shadow: 0 0 15px rgba(231, 76, 60, 0.4) !important;
+            color: #fff;
+        }
+
+        footer {
+            margin-top: 30px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .next-btn {
+            background: linear-gradient(135deg, #00f2fe 0%, #4facfe 100%);
+            border: none;
+            padding: 12px 28px;
+            border-radius: 12px;
+            color: #0f2027;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 5px 15px var(--accent-glow);
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 242, 254, 0.6);
+        }
+
+        /* Ergebnis-Bildschirm */
+        .results-screen {
+            text-align: center;
+            display: none;
+        }
+
+        .score-display {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin: 20px 0;
+            background: linear-gradient(to right, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .restart-btn {
+            background: transparent;
+            border: 2px solid var(--text-main);
+            padding: 12px 28px;
+            border-radius: 12px;
+            color: var(--text-main);
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        .restart-btn:hover {
+            background: var(--text-main);
+            color: #0f2027;
+        }
+    </style>
+</head>
+<body>
+
+<div class="quiz-container">
+    <div id="quiz-screen">
+        <header>
+            <h1>Infotafel: Megastadt Lagos</h1>
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progress"></div>
+            </div>
+        </header>
+
+        <main>
+            <div class="question-box">
+                <div class="question-number" id="q-num">Frage 1 von 15</div>
+                <div class="question-text" id="q-text">Lade Frage...</div>
+            </div>
+
+            <div class="options-list" id="options-container">
+                </div>
+        </main>
+
+        <footer>
+            <button class="next-btn" id="next-button">Nächste Frage</button>
+        </footer>
+    </div>
+
+    <div id="results-screen" class="results-screen">
+        <h1>Quiz abgeschlossen!</h1>
+        <p>Deine Auswertung zum Strukturwandel und Leben in Lagos:</p>
+        <div class="score-display" id="score-text">0 / 15</div>
+        <p id="feedback-text">Gut gemacht!</p>
+        <button class="restart-btn" onclick="resetQuiz()">Quiz neu starten</button>
+    </div>
+</div>
+
+<script>
+    const questions = [
+        {
+            q: "Wie viele Einwohner hat die Megastadt Lagos schätzungsweise?",
+            a: ["Über 5 Millionen", "Über 10 Millionen", "Über 20 Millionen", "Über 50 Millionen"],
+            correct: 2
+        },
+        {
+            q: "Wie viele Menschen ziehen schätzungsweise täglich neu nach Lagos?",
+            a: ["Etwa 500", "Etwa 2.000", "Etwa 5.000", "Etwa 10.000"],
+            correct: 1
+        },
+        {
+            q: "Welcher Anteil der Bevölkerung von Lagos lebt in informellen Siedlungen (Slums)?",
+            a: ["Ca. 20% bis 30%", "Ca. 40% bis 50%", "Ca. 60% bis 70%", "Ca. 80% bis 90%"],
+            correct: 2
+        },
+        {
+            q: "Wo befinden sich die über 100 identifizierten Slums in Lagos meistens?",
+            a: ["Ausschließlich weit außerhalb am Stadtrand", "Oft direkt neben modernen Business-Distrikten", "Nur auf den vorgelagerten Inseln", "In der Nähe von Agrarflächen"],
+            correct: 1
+        },
+        {
+            q: "Was ist das besondere Merkmal des bekannten Slums 'Makoko'?",
+            a: ["Er liegt unter der Erde", "Er wurde teilweise auf Stelzen direkt in der Lagune erbaut", "Er besteht nur aus Beton-Hochhäusern", "Er hat ein eigenes U-Bahn-Netz"],
+            correct: 1
+        },
+        {
+            q: "Wie bewegen sich die Menschen in den Wasserwegen von Makoko primär fort?",
+            a: ["Mit Motorrädern", "Über Hängebrücken", "Fast ausschließlich mit Kanus", "Mit schwimmenden Bussen"],
+            correct: 2
+        },
+        {
+            q: "Wovon lebt die Gemeinschaft in Makoko traditionell?",
+            a: ["Vom Fischfang und Holzhandel", "Vom Tourismus und Handwerker-Messen", "Vom legalen Bankenwesen", "Vom Bergbau"],
+            correct: 0
+        },
+        {
+            q: "Wie ist die Wohndichte in den Slums wie Ajegunle oder Mushin oft geprägt?",
+            a: ["Jeder Bewohner hat ein eigenes Apartment", "Oft lebt eine ganze Familie in nur einem Zimmer", "Die Hütten stehen meist leer", "Es gibt große Gemeinschafts-Villen"],
+            correct: 1
+        },
+        {
+            q: "Wie sieht die Sanitärversorgung in den informellen Siedlungen aus?",
+            a: ["Es gibt eine moderne, staatliche Kanalisation", "Es gibt keine Probleme durch biologische Filter", "Latrinen entleeren sich oft direkt in den Boden oder das Wasser", "Die Entsorgung läuft komplett über Drohnen"],
+            correct: 2
+        },
+        {
+            q: "Woher beziehen die Slum-Bewohner meist ihr Trinkwasser, da kein städtischer Anschluss existiert?",
+            a: ["Aus kostenlosen staatlichen Brunnen", "Sie filtern das Regenwasser mit High-Tech-Anlagen", "Sie kaufen es teuer von privaten Verkäufern in Kanistern/Beuteln", "Direkt und ungefiltert aus der Salzwasser-Lagune"],
+            correct: 2
+        },
+        {
+            q: "Wie organisieren viele Haushalte ihren Strom bei instabilen informellen Anschlüssen?",
+            a: ["Durch großflächige Solarparks", "Über teure und laute Dieselgeneratoren", "Gar nicht, es gibt dort nirgends Strom", "Durch Windkrafträder auf den Dächern"],
+            correct: 1
+        },
+        {
+            q: "In welchem Wirtschaftsbereich arbeitet die Mehrheit der Slum-Bewohner?",
+            a: ["Im formellen Sektor mit festen Arbeitsverträgen", "Im staatlichen Dienst", "Im informellen Sektor ohne soziale Absicherung", "In internationalen Großkonzernen"],
+            correct: 2
+        },
+        {
+            q: "Welche Tätigkeit gehört laut Infotafel NICHT zu den typischen Jobs im informellen Sektor vor Ort?",
+            a: ["Straßenhandel", "Müllrecycling (z.B. Olusosun-Mülldeponie)", "Software-Entwicklung für internationale Banken", "Schneidereien und Reparaturwerkstätten"],
+            correct: 2
+        },
+        {
+            q: "Warum kommt es in Lagos immer wieder zu staatlichen Zwangsräumungen und Abrissen von Slums?",
+            a: ["Weil das Land extrem wertvoll ist, um Platz für Luxusimmobilien zu schaffen", "Weil die Bewohner darum bitten", "Weil die Flächen komplett überflutet und unbewohnbar wurden", "Um dort große Nationalparks zu errichten"],
+            correct: 0
+        },
+        {
+            q: "Was war die 'Makoko Floating School'?",
+            a: ["Eine Luxusschule für reiche Reeder", "Ein innovativer architektonischer Ansatz, der auf die speziellen Bedingungen reagierte", "Ein staatliches U-Boot zu Forschungszwecken", "Die größte Universität von ganz Nigeria"],
+            correct: 1
+        }
+    ];
+
+    let currentQuestionIndex = 0;
+    let score = 0;
+
+    const quizScreen = document.getElementById('quiz-screen');
+    const resultsScreen = document.getElementById('results-screen');
+    const qNum = document.getElementById('q-num');
+    const qText = document.getElementById('q-text');
+    const optionsContainer = document.getElementById('options-container');
+    const nextButton = document.getElementById('next-button');
+    const progressBar = document.getElementById('progress');
+    const scoreText = document.getElementById('score-text');
+    const feedbackText = document.getElementById('feedback-text');
+
+    function startQuiz() {
+        currentQuestionIndex = 0;
+        score = 0;
+        quizScreen.style.display = 'block';
+        resultsScreen.style.display = 'none';
+        showQuestion();
+    }
+
+    function showQuestion() {
+        nextButton.style.display = 'none';
+        optionsContainer.innerHTML = '';
+        
+        const currentQuestion = questions[currentQuestionIndex];
+        
+        // Update Header & Progress
+        qNum.innerText = `Frage ${currentQuestionIndex + 1} von ${questions.length}`;
+        qText.innerText = currentQuestion.q;
+        
+        const progressPercent = ((currentQuestionIndex) / questions.length) * 100;
+        progressBar.style.width = `${progressPercent}%`;
+
+        // Generate Buttons
+        currentQuestion.a.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.innerText = option;
+            button.classList.add('option-btn');
+            button.addEventListener('click', () => selectOption(index));
+            optionsContainer.appendChild(button);
+        });
+    }
+
+    function selectOption(selectedIndex) {
+        const currentQuestion = questions[currentQuestionIndex];
+        const buttons = optionsContainer.querySelectorAll('.option-btn');
+        
+        buttons.forEach((button, index) => {
+            button.disabled = true; // Verhindert Mehrfachklicks
+            if (index === currentQuestion.correct) {
+                button.classList.add('correct');
+            }
+            if (selectedIndex === index && selectedIndex !== currentQuestion.correct) {
+                button.classList.add('wrong');
+            }
+        });
+
+        if (selectedIndex === currentQuestion.correct) {
+            score++;
+        }
+
+        nextButton.style.display = 'block';
+    }
+
+    nextButton.addEventListener('click', () => {
+        currentQuestionIndex++;
+        if (currentQuestionIndex < questions.length) {
+            showQuestion();
+        } else {
+            showResults();
+        }
+    });
+
+    function showResults() {
+        progressBar.style.width = '100%';
+        quizScreen.style.display = 'none';
+        resultsScreen.style.display = 'block';
+        
+        scoreText.innerText = `${score} / ${questions.length}`;
+        
+        // Dynamisches Feedback
+        if (score === questions.length) {
+            feedbackText.innerText = "Perfekt! Du hast die Infotafel meisterhaft verstanden.";
+        } else if (score >= 10) {
+            feedbackText.innerText = "Super Ergebnis! Du hast ein starkes Wissen über die Dynamiken in Lagos.";
+        } else if (score >= 5) {
+            feedbackText.innerText = "Bestanden! Schau dir manche Abschnitte der Infotafel ruhig nochmal an.";
+        } else {
+            feedbackText.innerText = "Das geht besser. Lies dir die Infotafel noch einmal aufmerksam durch.";
+        }
+    }
+
+    function resetQuiz() {
+        startQuiz();
+    }
+
+    // Inititaler Start
+    startQuiz();
+</script>
+
+</body>
+</html>
